@@ -1,36 +1,32 @@
 <!-- src/views/WriterDashboard.vue -->
-
 <template>
   <v-container>
     <h1>Writer Dashboard</h1>
+    <v-alert v-if="error" type="error" dense>{{ error }}</v-alert>
     <v-row>
-      <v-col cols="12" md="6">
+      <v-col cols="12" sm="6">
         <v-card>
-          <v-card-title>For Edit</v-card-title>
+          <v-card-title>For Edit ({{ forEditCount }})</v-card-title>
           <v-card-text>
+            <!-- List of articles for edit -->
             <v-list>
               <v-list-item v-for="article in forEditArticles" :key="article.id">
                 <v-list-item-content>
                   <v-list-item-title>{{ article.title }}</v-list-item-title>
-                  <v-list-item-subtitle>
-                    By: {{ article.writer.firstname }}
-                    {{ article.writer.lastname }}
-                  </v-list-item-subtitle>
+                  <v-list-item-subtitle>{{
+                    article.date
+                  }}</v-list-item-subtitle>
                 </v-list-item-content>
-                <v-list-item-action>
-                  <v-btn color="blue" @click="editArticle(article.id)"
-                    >Edit</v-btn
-                  >
-                </v-list-item-action>
               </v-list-item>
             </v-list>
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="12" md="6">
+      <v-col cols="12" sm="6">
         <v-card>
-          <v-card-title>Published</v-card-title>
+          <v-card-title>Published ({{ publishedCount }})</v-card-title>
           <v-card-text>
+            <!-- List of published articles -->
             <v-list>
               <v-list-item
                 v-for="article in publishedArticles"
@@ -38,10 +34,9 @@
               >
                 <v-list-item-content>
                   <v-list-item-title>{{ article.title }}</v-list-item-title>
-                  <v-list-item-subtitle>
-                    By: {{ article.writer.firstname }}
-                    {{ article.writer.lastname }}
-                  </v-list-item-subtitle>
+                  <v-list-item-subtitle>{{
+                    article.date
+                  }}</v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
             </v-list>
@@ -49,56 +44,51 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-btn color="green" @click="createArticle">Create New Article</v-btn>
+    <v-btn color="primary" @click="createNewArticle">Create New Article</v-btn>
   </v-container>
 </template>
 
 <script>
-import axios from "axios";
+import apiClient from "@/plugins/axios";
 
 export default {
   name: "WriterDashboard",
   data() {
     return {
-      articles: [], // This should be fetched from the backend
+      forEditArticles: [],
+      publishedArticles: [],
+      forEditCount: 0,
+      publishedCount: 0,
+      error: "",
     };
   },
-  computed: {
-    forEditArticles() {
-      return this.articles.filter(
-        (article) =>
-          article.status === "For Edit" &&
-          article.writer.id === this.$store.state.user.id
-      );
-    },
-    publishedArticles() {
-      return this.articles.filter(
-        (article) =>
-          article.status === "Published" &&
-          article.writer.id === this.$store.state.user.id
-      );
-    },
-  },
   methods: {
-    editArticle(id) {
-      this.$router.push(`/edit-article/${id}`);
+    async fetchArticles() {
+      try {
+        const response = await apiClient.get("/articles");
+        const articles = response.data;
+
+        // Filter articles by writer's ID and status
+        const writerId = this.$store.state.user.id;
+        this.forEditArticles = articles.filter(
+          (a) => a.writerId === writerId && a.status === "For Edit"
+        );
+        this.publishedArticles = articles.filter(
+          (a) => a.writerId === writerId && a.status === "Published"
+        );
+
+        this.forEditCount = this.forEditArticles.length;
+        this.publishedCount = this.publishedArticles.length;
+      } catch (err) {
+        console.error(
+          "Error fetching articles:",
+          err.response?.data?.message || err.message
+        );
+        this.error = "Failed to load articles.";
+      }
     },
-    createArticle() {
-      this.$router.push("/create-article");
-    },
-    fetchArticles() {
-      axios
-        .get("http://localhost:5000/api/articles", {
-          headers: {
-            Authorization: `Bearer ${this.$store.state.token}`,
-          },
-        })
-        .then((response) => {
-          this.articles = response.data;
-        })
-        .catch((error) => {
-          console.error("Error fetching articles:", error);
-        });
+    createNewArticle() {
+      this.$router.push({ name: "CreateArticle" });
     },
   },
   created() {

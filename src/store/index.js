@@ -1,6 +1,6 @@
 // src/store/index.js
 import { createStore } from "vuex";
-import axios from "axios";
+import apiClient from "@/plugins/axios";
 
 export default createStore({
   state: {
@@ -28,14 +28,17 @@ export default createStore({
   actions: {
     async login({ commit }, credentials) {
       try {
-        const response = await axios.post(
-          "http://localhost:5000/api/auth/login",
-          credentials
-        );
-        commit("setToken", response.data.token);
-        commit("setUser", response.data.user);
+        const response = await apiClient.post("/auth/login", credentials);
+        const token = response.data.token;
+        const user = response.data.user;
+        localStorage.setItem("token", token);
+        commit("setToken", token);
+        commit("setUser", user);
       } catch (error) {
-        console.error("Login error:", error);
+        console.error(
+          "Login error:",
+          error.response?.data?.message || error.message
+        );
         throw error;
       }
     },
@@ -44,7 +47,7 @@ export default createStore({
     },
     async fetchUser({ commit, state }) {
       try {
-        const response = await axios.get(
+        const response = await apiClient.get(
           "http://localhost:5000/api/auth/user",
           {
             headers: {

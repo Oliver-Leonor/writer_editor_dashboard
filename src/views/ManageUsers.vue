@@ -82,7 +82,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import apiClient from "@/plugins/axios";
 
 export default {
   name: "ManageUsers",
@@ -90,7 +90,7 @@ export default {
     return {
       users: [],
       headers: [
-        { text: "ID", value: "id" },
+        { text: "ID", value: "_id" },
         { text: "First Name", value: "firstname" },
         { text: "Last Name", value: "lastname" },
         { text: "Email", value: "email" },
@@ -100,7 +100,7 @@ export default {
       ],
       dialog: false,
       user: {
-        id: null,
+        _id: null,
         firstname: "",
         lastname: "",
         email: "",
@@ -116,11 +116,7 @@ export default {
   methods: {
     async fetchUsers() {
       try {
-        const response = await axios.get("http://localhost:5000/api/users", {
-          headers: {
-            Authorization: `Bearer ${this.$store.state.token}`,
-          },
-        });
+        const response = await apiClient.get("/users");
         this.users = response.data;
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -130,7 +126,7 @@ export default {
     openCreateUserDialog() {
       this.isEdit = false;
       this.user = {
-        id: null,
+        _id: null,
         firstname: "",
         lastname: "",
         email: "",
@@ -148,36 +144,24 @@ export default {
     async createUser() {
       try {
         const newUser = { ...this.user };
-        await axios.post("http://localhost:5000/api/users", newUser, {
-          headers: {
-            Authorization: `Bearer ${this.$store.state.token}`,
-          },
-        });
+        await apiClient.post("/users", newUser);
         this.dialog = false;
         this.fetchUsers();
       } catch (error) {
         console.error("Error creating user:", error);
-        this.error = "Failed to create user.";
+        this.error = error.response?.data?.message || "Failed to create user.";
       }
     },
     async updateUser() {
       try {
         const updatedUser = { ...this.user };
         delete updatedUser.password; // Do not send password if not changed
-        await axios.put(
-          `http://localhost:5000/api/users/${this.user.id}`,
-          updatedUser,
-          {
-            headers: {
-              Authorization: `Bearer ${this.$store.state.token}`,
-            },
-          }
-        );
+        await apiClient.put(`/users/${this.user._id}`, updatedUser);
         this.dialog = false;
         this.fetchUsers();
       } catch (error) {
         console.error("Error updating user:", error);
-        this.error = "Failed to update user.";
+        this.error = error.response?.data?.message || "Failed to update user.";
       }
     },
     closeDialog() {

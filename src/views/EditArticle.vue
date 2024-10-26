@@ -121,13 +121,16 @@ export default {
         this.error = "Failed to fetch article.";
       }
     },
-    async handleImageUpload(file) {
-      if (file) {
+    handleImageUpload(file) {
+      if (file && file instanceof Blob) {
         const reader = new FileReader();
         reader.onload = (e) => {
           this.imageUrl = e.target.result;
         };
         reader.readAsDataURL(file);
+      } else {
+        console.error("Invalid file type:", file);
+        this.error = "Please upload a valid image file.";
       }
     },
     async updateArticle() {

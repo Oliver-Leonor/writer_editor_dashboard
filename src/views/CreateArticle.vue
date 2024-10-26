@@ -7,7 +7,7 @@
         v-model="selectedCompany"
         :items="companies"
         item-text="name"
-        item-value="id"
+        item-value="_id"
         label="Related Company"
         required
       ></v-select>
@@ -17,7 +17,7 @@
         label="Article Image"
         prepend-icon="mdi-camera"
         required
-        @change="handleImageUpload"
+        @change="handleImageChange"
       ></v-file-input>
       <v-img v-if="imageUrl" :src="imageUrl" max-width="200"></v-img>
 
@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import apiClient from "@/plugins/axios";
 
 export default {
   name: "CreateArticle",
@@ -82,47 +82,70 @@ export default {
   methods: {
     async fetchCompanies() {
       try {
-        const response = await axios.get(
-          "http://localhost:5000/api/companies",
-          {
-            headers: {
-              Authorization: `Bearer ${this.$store.state.token}`,
-            },
-          }
-        );
+        const response = await apiClient.get("/companies");
         this.companies = response.data;
       } catch (error) {
         console.error("Error fetching companies:", error);
       }
     },
-    async handleImageUpload(file) {
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.imageUrl = e.target.result;
-        };
-        reader.readAsDataURL(file);
+    async handleImageChange(file) {
+      if (!file) {
+        this.error = "Please select an image.";
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
+      if (!allowedTypes.includes(file.type)) {
+        this.error = "Only JPEG, PNG, and GIF files are allowed.";
+        this.image = null;
+        return;
+      }
+
+      // Validate file size (e.g., max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        this.error = "Image size should be less than 5MB.";
+        this.image = null;
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const response = await apiClient.post("/upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        if (response.data.success) {
+          this.imageUrl = response.data.imageUrl;
+          this.error = "";
+        } else {
+          this.error = response.data.message || "Image upload failed.";
+        }
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        this.error = "Image upload failed.";
       }
     },
     async createArticle() {
-      if (!this.image) {
+      if (!this.imageUrl) {
         this.error = "Please upload an image.";
         return;
       }
       try {
         const newArticle = {
-          image: this.imageUrl,
+          imageUrl: this.imageUrl, // Use imageUrl from upload response
           title: this.title,
           link: this.link,
           date: this.date,
           content: this.content,
           companyId: this.selectedCompany,
         };
-        await axios.post("http://localhost:5000/api/articles", newArticle, {
-          headers: {
-            Authorization: `Bearer ${this.$store.state.token}`,
-          },
-        });
+        await apiClient.post("/articles", newArticle);
         this.$router.push({ name: "WriterDashboard" });
       } catch (error) {
         console.error("Error creating article:", error);
