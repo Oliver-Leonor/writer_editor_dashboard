@@ -6,7 +6,9 @@ import EditorDashboard from "@/views/EditorDashboard.vue";
 import AllMedia from "@/views/AllMedia.vue";
 import ManageUsers from "@/views/ManageUsers.vue";
 import ManageCompanies from "@/views/ManageCompanies.vue";
-import NotAuthorized from "@/views/NotAuthorized.vue"; // Optional
+import NotAuthorized from "@/views/NotAuthorized.vue";
+import CreateArticle from "@/views/CreateArticle.vue";
+import EditArticle from "@/views/EditArticle.vue";
 
 const routes = [
   {
@@ -49,7 +51,18 @@ const routes = [
     name: "NotAuthorized",
     component: NotAuthorized,
   },
-  // Add more routes as needed
+  {
+    path: "/create-article",
+    name: "CreateArticle",
+    component: CreateArticle,
+    meta: { requiresAuth: true, role: "Writer" },
+  },
+  {
+    path: "/edit-article/:id",
+    name: "EditArticle",
+    component: EditArticle,
+    meta: { requiresAuth: true, role: ["Writer", "Editor"] }, // Both roles can edit, with permissions
+  },
 ];
 
 const router = createRouter({

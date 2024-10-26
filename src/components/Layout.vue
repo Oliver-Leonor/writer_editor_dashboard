@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <!-- src/components/Layout.vue -->
 <template>
   <v-app>
@@ -21,11 +22,11 @@ export default {
     Navbar,
   },
   setup() {
-    // eslint-disable-next-line no-unused-vars
     const store = useStore();
+    // eslint-disable-next-line no-unused-vars
     const route = useRoute();
 
-    const showNavbar = computed(() => route.name !== "Login");
+    const showNavbar = computed(() => store.getters.isAuthenticated);
 
     return {
       showNavbar,
