@@ -1,22 +1,22 @@
-import Vue from "vue";
+import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
 import store from "./store";
-import Vuetify from "vuetify";
-import "vuetify/dist/vuetify.min.css";
-import VueQuillEditor from "vue-quill-editor";
+import vuetify from "./plugins/vuetify";
+import { loadFonts } from "./plugins/webfontloader";
+
+import Vue3Quill from "vue3-quill";
 import "quill/dist/quill.core.css";
 import "quill/dist/quill.snow.css";
 import "quill/dist/quill.bubble.css";
 
-Vue.use(Vuetify);
-Vue.use(VueQuillEditor);
+loadFonts();
 
-Vue.config.productionTip = false;
+const app = createApp(App);
 
-new Vue({
-  router,
-  store,
-  vuetify: new Vuetify(),
-  render: (h) => h(App),
-}).$mount("#app");
+app.use(router);
+app.use(store);
+app.use(vuetify);
+app.use(Vue3Quill);
+
+app.mount("#app");
